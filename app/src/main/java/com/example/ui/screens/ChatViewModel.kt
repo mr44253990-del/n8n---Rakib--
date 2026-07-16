@@ -49,6 +49,10 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                         
                         val jsonInputString = JSONObject().apply {
                             put("message", text)
+                            val fcmToken = com.example.data.PrefManager.fcmToken
+                            if (fcmToken.isNotEmpty()) {
+                                put("fcmToken", fcmToken)
+                            }
                         }.toString()
                         
                         OutputStreamWriter(connection.outputStream).use { writer ->

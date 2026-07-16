@@ -1,5 +1,9 @@
 package com.example.ui.screens
 
+import android.widget.Toast
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
@@ -53,7 +57,18 @@ fun SettingsScreen(onNavigateToFeature: (String) -> Unit = {}, onLogout: () -> U
                 Spacer(modifier = Modifier.height(4.dp))
                 Text("To send a push notification from n8n to this device, use this FCM Token:", style = MaterialTheme.typography.bodySmall)
                 val token = com.example.data.PrefManager.fcmToken
-                Text(token.ifEmpty { "Generating token..." }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(vertical = 8.dp))
+                val clipboardManager = LocalClipboardManager.current
+                Text(
+                    text = token.ifEmpty { "Generating token..." },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(vertical = 8.dp).clickable {
+                        if (token.isNotEmpty()) {
+                            clipboardManager.setText(AnnotatedString(token))
+                            Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
                 Text("Send FCM with data payload: { \"message\": \"Your reply\" }", style = MaterialTheme.typography.bodySmall)
             }
         }
