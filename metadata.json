@@ -1,0 +1,6 @@
+{
+  "name": "N8N-RAKIB.ai",
+  "description": "N8N Workflow Management Client App",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
