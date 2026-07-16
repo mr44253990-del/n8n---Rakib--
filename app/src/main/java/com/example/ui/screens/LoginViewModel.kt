@@ -2,57 +2,56 @@ package com.example.ui.screens
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.request.get
-import io.ktor.client.request.header
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
-import io.ktor.http.isSuccess
-import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import io.ktor.client.statement.HttpResponse
-
-@Serializable
-data class LoginRequest(val email: String, val password: String)
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import java.io.OutputStreamWriter
+import java.net.HttpURLConnection
+import java.net.URL
 
 class LoginViewModel : ViewModel() {
-    private val client = HttpClient(OkHttp) {
-        install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-            })
-        }
-    }
-
     private val _loginState = MutableStateFlow<LoginState>(LoginState.Idle)
     val loginState: StateFlow<LoginState> = _loginState.asStateFlow()
 
     fun loginWithEmail(url: String, email: String, pass: String) {
         viewModelScope.launch {
             _loginState.value = LoginState.Loading
+            if (!url.startsWith("http")) {
+                _loginState.value = LoginState.Error("URL must start with http or https")
+                return@launch
+            }
             try {
-                if (!url.startsWith("http")) {
-                    _loginState.value = LoginState.Error("URL must start with http or https")
-                    return@launch
-                }
                 val baseUrl = url.trimEnd('/')
-                val response: HttpResponse = client.post("$baseUrl/rest/login") {
-                    contentType(ContentType.Application.Json)
-                    setBody(LoginRequest(email, pass))
+                val success = withContext(Dispatchers.IO) {
+                    val connection = URL("$baseUrl/rest/login").openConnection() as HttpURLConnection
+                    connection.requestMethod = "POST"
+                    connection.setRequestProperty("Content-Type", "application/json")
+                    connection.setRequestProperty("Accept", "application/json")
+                    connection.doOutput = true
+
+                    val jsonInputString = JSONObject().apply {
+                        put("email", email)
+                        put("password", pass)
+                    }.toString()
+
+                    OutputStreamWriter(connection.outputStream).use { writer ->
+                        writer.write(jsonInputString)
+                        writer.flush()
+                    }
+
+                    val responseCode = connection.responseCode
+                    connection.disconnect()
+                    responseCode in 200..299
                 }
-                if (response.status.value == 200 && response.contentType()?.match(ContentType.Application.Json) == true) {
+
+                if (success) {
                     _loginState.value = LoginState.Success
                 } else {
-                    _loginState.value = LoginState.Error("Invalid email or password. Server returned ${response.status.value}")
+                    _loginState.value = LoginState.Error("Invalid email or password.")
                 }
             } catch (e: Exception) {
                 _loginState.value = LoginState.Error("Network error: ${e.message}")
@@ -63,20 +62,27 @@ class LoginViewModel : ViewModel() {
     fun loginWithApiKey(url: String, apiKey: String) {
         viewModelScope.launch {
             _loginState.value = LoginState.Loading
+            if (!url.startsWith("http")) {
+                _loginState.value = LoginState.Error("URL must start with http or https")
+                return@launch
+            }
             try {
-                if (!url.startsWith("http")) {
-                    _loginState.value = LoginState.Error("URL must start with http or https")
-                    return@launch
-                }
                 val baseUrl = url.trimEnd('/')
-                val response: HttpResponse = client.get("$baseUrl/api/v1/workflows") {
-                    header("X-N8N-API-KEY", apiKey)
+                val success = withContext(Dispatchers.IO) {
+                    val connection = URL("$baseUrl/api/v1/workflows").openConnection() as HttpURLConnection
+                    connection.requestMethod = "GET"
+                    connection.setRequestProperty("X-N8N-API-KEY", apiKey)
+                    connection.setRequestProperty("Accept", "application/json")
+
+                    val responseCode = connection.responseCode
+                    connection.disconnect()
+                    responseCode in 200..299
                 }
-                
-                if (response.status.value == 200 && response.contentType()?.match(ContentType.Application.Json) == true) {
+
+                if (success) {
                     _loginState.value = LoginState.Success
                 } else {
-                    _loginState.value = LoginState.Error("Invalid API Key or URL. Code: ${response.status.value}")
+                    _loginState.value = LoginState.Error("Invalid API Key or URL.")
                 }
             } catch (e: Exception) {
                 _loginState.value = LoginState.Error("Network error: ${e.message}")
