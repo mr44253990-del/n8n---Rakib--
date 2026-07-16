@@ -44,8 +44,18 @@ class MainActivity : ComponentActivity() {
 
     enableEdgeToEdge()
     setContent {
+      val authMode = com.example.data.PrefManager.authMode
+      if (authMode != -1) {
+          com.example.data.N8nApiClient.authMode = authMode
+          com.example.data.N8nApiClient.baseUrl = com.example.data.PrefManager.baseUrl
+          com.example.data.N8nApiClient.apiKey = com.example.data.PrefManager.apiKey
+          com.example.data.N8nApiClient.webhookUrl = com.example.data.PrefManager.webhookUrl
+      }
+      
+      val startDest = if (authMode == 1) com.example.DashboardRoute else if (authMode == 2) com.example.ChatRoute else com.example.LoginRoute
+
       MyApplicationTheme {
-        MainNavigation()
+        MainNavigation(startDestination = startDest)
       }
     }
   }

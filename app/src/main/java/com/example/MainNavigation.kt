@@ -28,7 +28,7 @@ val bottomNavItems = listOf(
 )
 
 @Composable
-fun MainNavigation() {
+fun MainNavigation(startDestination: Any = LoginRoute) {
     val navController = rememberNavController()
     var showBottomBar by remember { mutableStateOf(false) }
 
@@ -70,7 +70,7 @@ fun MainNavigation() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = LoginRoute,
+            startDestination = startDestination,
             modifier = Modifier.padding(innerPadding)
         ) {
             composable<LoginRoute> {
@@ -94,6 +94,7 @@ fun MainNavigation() {
                         com.example.data.N8nApiClient.baseUrl = ""
                         com.example.data.N8nApiClient.apiKey = ""
                         com.example.data.N8nApiClient.webhookUrl = ""
+                        com.example.data.PrefManager.clear()
                         navController.navigate(LoginRoute) {
                             popUpTo(0) { inclusive = true }
                         }

@@ -35,10 +35,10 @@ class NtfyService : Service() {
             isRunning = true
             createNotificationChannel()
             val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("n8n Background Sync Active")
-                .setContentText("Listening for real-time webhook updates...")
+                .setContentTitle("n8n Background Sync")
+                .setContentText("Listening for real-time webhook updates")
                 .setSmallIcon(android.R.drawable.ic_dialog_info)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setPriority(NotificationCompat.PRIORITY_MIN)
                 .build()
 
             startForeground(1, notification)
@@ -64,6 +64,10 @@ class NtfyService : Service() {
                                     val json = JSONObject(line)
                                     if (json.optString("event") == "message") {
                                         val message = json.optString("message")
+                                        val app = application as com.example.N8nApplication
+                                        app.database.chatDao().insertMessage(
+                                            com.example.data.ChatMessageEntity(sender = "System", text = message, isSystem = true)
+                                        )
                                         if (!AppLifecycleTracker.isForeground) {
                                             NotificationHelper.showNotification(applicationContext, "n8n AI Response", message)
                                         }
@@ -95,8 +99,9 @@ class NtfyService : Service() {
             val serviceChannel = NotificationChannel(
                 CHANNEL_ID,
                 "n8n Background Service",
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_MIN
             )
+            serviceChannel.setShowBadge(false)
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(serviceChannel)
         }

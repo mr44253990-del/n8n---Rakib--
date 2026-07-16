@@ -25,6 +25,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.net.Uri
 
+import com.example.data.ChatMessageEntity
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.withStyle
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(viewModel: ChatViewModel = viewModel()) {
@@ -118,7 +124,7 @@ fun ChatScreen(viewModel: ChatViewModel = viewModel()) {
 }
 
 @Composable
-fun ChatBubble(msg: ChatMessage) {
+fun ChatBubble(msg: ChatMessageEntity) {
     val isSystem = msg.isSystem
     
     // Glassmorphism effect for bubbles
@@ -126,6 +132,19 @@ fun ChatBubble(msg: ChatMessage) {
         MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
     } else {
         MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
+    }
+    
+    val formattedText = buildAnnotatedString {
+        val parts = msg.text.split("```")
+        for ((index, part) in parts.withIndex()) {
+            if (index % 2 == 1) { // It's a code block
+                withStyle(style = SpanStyle(fontFamily = FontFamily.Monospace, background = Color.Black.copy(alpha = 0.1f))) {
+                    append(part)
+                }
+            } else {
+                append(part)
+            }
+        }
     }
     
     Row(
@@ -161,12 +180,10 @@ fun ChatBubble(msg: ChatMessage) {
                 )
         ) {
             Text(
-                text = msg.text,
+                text = formattedText,
                 modifier = Modifier.padding(14.dp),
                 color = if (isSystem) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimary
             )
         }
     }
 }
-
-data class ChatMessage(val sender: String, val text: String, val isSystem: Boolean)

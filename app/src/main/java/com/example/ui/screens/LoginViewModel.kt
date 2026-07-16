@@ -63,6 +63,8 @@ class LoginViewModel : ViewModel() {
                 if (success.first) {
                     N8nApiClient.baseUrl = baseUrl
                     N8nApiClient.authMode = 0
+                    com.example.data.PrefManager.baseUrl = baseUrl
+                    com.example.data.PrefManager.authMode = 0
                     if (setCookie != null) {
                         N8nApiClient.cookie = setCookie!!
                     }
@@ -100,6 +102,9 @@ class LoginViewModel : ViewModel() {
                     N8nApiClient.baseUrl = baseUrl
                     N8nApiClient.apiKey = apiKey
                     N8nApiClient.authMode = 1
+                    com.example.data.PrefManager.baseUrl = baseUrl
+                    com.example.data.PrefManager.apiKey = apiKey
+                    com.example.data.PrefManager.authMode = 1
                     _loginState.value = LoginState.Success
                 } else {
                     _loginState.value = LoginState.Error("Invalid API Key or URL.")
@@ -129,6 +134,8 @@ class LoginViewModel : ViewModel() {
                 if (success) {
                    N8nApiClient.webhookUrl = url
                    N8nApiClient.authMode = 2
+                   com.example.data.PrefManager.webhookUrl = url
+                   com.example.data.PrefManager.authMode = 2
                    _loginState.value = LoginState.Success
                 } else {
                    _loginState.value = LoginState.Error("Invalid Webhook URL. Server error.")

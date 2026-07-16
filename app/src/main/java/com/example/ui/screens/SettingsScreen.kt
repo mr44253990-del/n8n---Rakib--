@@ -8,6 +8,9 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -26,7 +29,9 @@ import androidx.compose.foundation.background
 fun SettingsScreen(onNavigateToFeature: (String) -> Unit = {}, onLogout: () -> Unit = {}) {
     val context = LocalContext.current
     val deviceId = remember { AndroidSettings.Secure.getString(context.contentResolver, AndroidSettings.Secure.ANDROID_ID) ?: "default_device" }
-    
+    var webhookUrlText by remember { mutableStateOf(com.example.data.PrefManager.webhookUrl) }
+    var showWebhookSave by remember { mutableStateOf(false) }
+
     val glassBackground = Brush.linearGradient(
         colors = listOf(
             MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
@@ -49,6 +54,34 @@ fun SettingsScreen(onNavigateToFeature: (String) -> Unit = {}, onLogout: () -> U
                 Text("To send a push notification from n8n to this device, send an HTTP POST request to:", style = MaterialTheme.typography.bodySmall)
                 Text("https://ntfy.sh/n8n_aistudio_$deviceId", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(vertical = 8.dp))
                 Text("Body: { \"message\": \"Your text here\" }", style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        
+        if (N8nApiClient.authMode == 2) {
+            Card(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Webhook URL Configuration", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = webhookUrlText,
+                        onValueChange = { 
+                            webhookUrlText = it 
+                            showWebhookSave = it != com.example.data.PrefManager.webhookUrl
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Webhook URL") }
+                    )
+                    if (showWebhookSave) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(onClick = { 
+                            com.example.data.PrefManager.webhookUrl = webhookUrlText
+                            N8nApiClient.webhookUrl = webhookUrlText
+                            showWebhookSave = false
+                        }) {
+                            Text("Save Webhook URL")
+                        }
+                    }
+                }
             }
         }
 

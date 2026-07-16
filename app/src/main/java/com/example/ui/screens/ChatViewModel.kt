@@ -3,13 +3,15 @@ package com.example.ui.screens
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.N8nApplication
+import com.example.data.ChatMessageEntity
 import com.example.data.N8nApiClient
 import com.example.util.AppLifecycleTracker
 import com.example.util.NotificationHelper
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -18,16 +20,22 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 class ChatViewModel(application: Application) : AndroidViewModel(application) {
-    private val _messages = MutableStateFlow<List<ChatMessage>>(
-        listOf(ChatMessage("System", "Webhook AI mode active. You can send messages to your n8n workflow here.", true))
-    )
-    val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
+    private val chatDao = (application as N8nApplication).database.chatDao()
+
+    val messages: StateFlow<List<ChatMessageEntity>> = chatDao.getAllMessages()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     fun sendMessage(text: String) {
         if (text.isBlank()) return
-
-        val newMsg = ChatMessage("User", text, false)
-        _messages.value = _messages.value + newMsg
+        
+        viewModelScope.launch(Dispatchers.IO) {
+            val newMsg = ChatMessageEntity(sender = "User", text = text, isSystem = false)
+            chatDao.insertMessage(newMsg)
+        }
 
         if (N8nApiClient.webhookUrl.isNotEmpty()) {
             viewModelScope.launch {
@@ -38,18 +46,19 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                         connection.setRequestProperty("Content-Type", "application/json")
                         connection.setRequestProperty("Accept", "application/json")
                         connection.doOutput = true
-
+                        
                         val jsonInputString = JSONObject().apply {
                             put("message", text)
                         }.toString()
-
+                        
                         OutputStreamWriter(connection.outputStream).use { writer ->
                             writer.write(jsonInputString)
                             writer.flush()
                         }
-
+                        
                         val responseCode = connection.responseCode
                         var reply = "Webhook triggered successfully. ($responseCode)"
+                        
                         if (responseCode in 200..299) {
                             try {
                                 val responseText = connection.inputStream.bufferedReader().use { it.readText() }
@@ -78,17 +87,24 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                         connection.disconnect()
                         reply
                     }
-                    _messages.value = _messages.value + ChatMessage("System", responseMsg, true)
+                    
+                    withContext(Dispatchers.IO) {
+                        chatDao.insertMessage(ChatMessageEntity(sender = "System", text = responseMsg, isSystem = true))
+                    }
                     
                     if (!AppLifecycleTracker.isForeground) {
                         NotificationHelper.showNotification(getApplication(), "n8n AI Response", responseMsg)
                     }
                 } catch (e: Exception) {
-                    _messages.value = _messages.value + ChatMessage("System", "Error: ${e.message}", true)
+                    withContext(Dispatchers.IO) {
+                        chatDao.insertMessage(ChatMessageEntity(sender = "System", text = "Error: ${e.message}", isSystem = true))
+                    }
                 }
             }
         } else {
-            _messages.value = _messages.value + ChatMessage("System", "Webhook URL not configured.", true)
+            viewModelScope.launch(Dispatchers.IO) {
+                chatDao.insertMessage(ChatMessageEntity(sender = "System", text = "Webhook URL not configured.", isSystem = true))
+            }
         }
     }
 }
