@@ -8,38 +8,75 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
-fun DashboardScreen() {
+fun DashboardScreen(viewModel: N8nViewModel = viewModel()) {
+    val workflows by viewModel.workflows.collectAsState()
+    val executions by viewModel.executions.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.refreshData()
+    }
+
+    val activeCount = workflows.count { it.optBoolean("active", false) }
+    val totalCount = workflows.size
+    val inactiveCount = totalCount - activeCount
+    
+    val successExecs = executions.count { !it.optBoolean("waitTill") && !it.has("error") }
+    val errorExecs = executions.count { it.has("error") }
+    val totalExecs = executions.size
+    val successRate = if (totalExecs > 0) ((successExecs.toFloat() / totalExecs) * 100).toInt() else 100
+
     val stats = listOf(
-        StatItem("Active Workflows", "12", Icons.Default.CheckCircle),
-        StatItem("Inactive", "4", Icons.Default.PauseCircle),
-        StatItem("Failed Execs", "3", Icons.Default.Error),
-        StatItem("Running", "1", Icons.Default.PlayCircle),
-        StatItem("Success Rate", "98.5%", Icons.Default.TrendingUp),
-        StatItem("Uptime", "99.9%", Icons.Default.Timer)
+        StatItem("Total Workflows", "$totalCount", Icons.Default.AccountTree),
+        StatItem("Active", "$activeCount", Icons.Default.CheckCircle),
+        StatItem("Inactive", "$inactiveCount", Icons.Default.PauseCircle),
+        StatItem("Executions", "${executions.size}", Icons.Default.PlayCircle),
+        StatItem("Success Rate", "$successRate%", Icons.Default.TrendingUp),
+        StatItem("Errors", "$errorExecs", Icons.Default.Error)
     )
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text(
-            text = "Dashboard",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Dashboard",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+            IconButton(onClick = { viewModel.refreshData() }) {
+                Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+            }
+        }
+        
         Spacer(modifier = Modifier.height(16.dp))
         
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(stats) { stat ->
-                StatCard(stat)
+        if (isLoading && workflows.isEmpty() && executions.isEmpty()) {
+            Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(stats) { stat ->
+                    StatCard(stat)
+                }
             }
         }
         
@@ -50,11 +87,26 @@ fun DashboardScreen() {
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(8.dp))
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                ActivityRow("Webhook triggered - Sync Customers", "2 mins ago", true)
-                ActivityRow("Failed execution - API limit", "15 mins ago", false)
-                ActivityRow("Workflow started - Daily Backup", "1 hr ago", true)
+        
+        if (executions.isEmpty()) {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                    Text("No recent activity found or using Webhook mode.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                executions.take(5).forEach { exec ->
+                    val isSuccess = !exec.has("error")
+                    val execId = exec.optString("id", "")
+                    val workflowId = exec.optString("workflowId", "Unknown")
+                    
+                    ActivityRow(
+                        text = "Execution $execId for workflow $workflowId",
+                        time = "Recently",
+                        success = isSuccess
+                    )
+                }
             }
         }
     }

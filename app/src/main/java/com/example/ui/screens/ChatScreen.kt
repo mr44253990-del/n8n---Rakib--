@@ -13,14 +13,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatScreen() {
+fun ChatScreen(viewModel: ChatViewModel = viewModel()) {
     var messageText by remember { mutableStateOf("") }
-    val messages = remember { mutableStateListOf(
-        ChatMessage("System", "Webhook AI mode active. You can send messages to your n8n workflow here.", true),
-    ) }
+    val messages by viewModel.messages.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
@@ -32,9 +31,10 @@ fun ChatScreen() {
         LazyColumn(
             modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
             contentPadding = PaddingValues(vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            reverseLayout = true
         ) {
-            items(messages) { msg ->
+            items(messages.reversed()) { msg ->
                 ChatBubble(msg)
             }
         }
@@ -57,10 +57,8 @@ fun ChatScreen() {
             )
             IconButton(onClick = { 
                 if (messageText.isNotBlank()) {
-                    messages.add(ChatMessage("User", messageText, false))
+                    viewModel.sendMessage(messageText)
                     messageText = ""
-                    // Simulate webhook reply
-                    messages.add(ChatMessage("System", "Webhook triggered successfully.", true))
                 }
             }) {
                 Icon(Icons.Default.Send, contentDescription = "Send", tint = MaterialTheme.colorScheme.primary)

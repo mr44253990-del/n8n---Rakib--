@@ -7,20 +7,24 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import org.json.JSONObject
 
 @Composable
-fun WorkflowsScreen() {
-    val workflows = listOf(
-        WorkflowItem("Sync Customers to CRM", true, "10 mins ago"),
-        WorkflowItem("Daily Database Backup", true, "1 hr ago"),
-        WorkflowItem("Send Welcome Emails", true, "2 hrs ago"),
-        WorkflowItem("Process Invoices", false, "1 day ago"),
-        WorkflowItem("Webhook Receiver (Test)", false, "3 days ago")
-    )
+fun WorkflowsScreen(viewModel: N8nViewModel = viewModel()) {
+    val workflows by viewModel.workflows.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.refreshData()
+    }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(
@@ -33,23 +37,37 @@ fun WorkflowsScreen() {
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
-            IconButton(onClick = { /* TODO */ }) {
-                Icon(Icons.Default.Add, contentDescription = "Add Workflow")
+            IconButton(onClick = { viewModel.refreshData() }) {
+                Icon(Icons.Default.Refresh, contentDescription = "Refresh")
             }
         }
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(workflows) { wf ->
-                WorkflowCard(wf)
+        if (isLoading && workflows.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else if (workflows.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("No workflows found or using Webhook mode.")
+            }
+        } else {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(workflows) { wf ->
+                    WorkflowCard(wf)
+                }
             }
         }
     }
 }
 
 @Composable
-fun WorkflowCard(wf: WorkflowItem) {
+fun WorkflowCard(wf: JSONObject) {
+    val name = wf.optString("name", "Unknown Workflow")
+    val active = wf.optBoolean("active", false)
+    val updatedAt = wf.optString("updatedAt", "")
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -57,37 +75,34 @@ fun WorkflowCard(wf: WorkflowItem) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = wf.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(text = name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = if (wf.active) Icons.Default.Circle else Icons.Default.PauseCircleFilled,
+                        imageVector = if (active) Icons.Default.Circle else Icons.Default.PauseCircleFilled,
                         contentDescription = null,
-                        tint = if (wf.active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(12.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = if (wf.active) "Active" else "Inactive",
+                        text = if (active) "Active" else "Inactive",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Last run: ${wf.lastRun}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    if (updatedAt.isNotEmpty()) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Updated: $updatedAt",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
             IconButton(onClick = { /* TODO */ }) {
                 Icon(Icons.Default.PlayArrow, contentDescription = "Execute", tint = MaterialTheme.colorScheme.primary)
             }
-            IconButton(onClick = { /* TODO */ }) {
-                Icon(Icons.Default.MoreVert, contentDescription = "Options")
-            }
         }
     }
 }
-
-data class WorkflowItem(val name: String, val active: Boolean, val lastRun: String)

@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.example.data.N8nApiClient
 import org.json.JSONObject
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
@@ -26,6 +27,7 @@ class LoginViewModel : ViewModel() {
             }
             try {
                 val baseUrl = url.trimEnd('/')
+                var setCookie: String? = null
                 val success = withContext(Dispatchers.IO) {
                     val connection = URL("$baseUrl/rest/login").openConnection() as HttpURLConnection
                     connection.requestMethod = "POST"
@@ -44,11 +46,19 @@ class LoginViewModel : ViewModel() {
                     }
 
                     val responseCode = connection.responseCode
+                    if (responseCode in 200..299) {
+                        setCookie = connection.getHeaderField("Set-Cookie")
+                    }
                     connection.disconnect()
                     responseCode in 200..299
                 }
 
                 if (success) {
+                    N8nApiClient.baseUrl = baseUrl
+                    N8nApiClient.authMode = 0
+                    if (setCookie != null) {
+                        N8nApiClient.cookie = setCookie!!
+                    }
                     _loginState.value = LoginState.Success
                 } else {
                     _loginState.value = LoginState.Error("Invalid email or password.")
@@ -80,6 +90,9 @@ class LoginViewModel : ViewModel() {
                 }
 
                 if (success) {
+                    N8nApiClient.baseUrl = baseUrl
+                    N8nApiClient.apiKey = apiKey
+                    N8nApiClient.authMode = 1
                     _loginState.value = LoginState.Success
                 } else {
                     _loginState.value = LoginState.Error("Invalid API Key or URL.")
@@ -93,14 +106,28 @@ class LoginViewModel : ViewModel() {
     fun testWebhook(url: String) {
         viewModelScope.launch {
             _loginState.value = LoginState.Loading
+            if (!url.startsWith("http")) {
+                _loginState.value = LoginState.Error("URL must start with http or https")
+                return@launch
+            }
             try {
-                if (url.startsWith("http")) {
+                val success = withContext(Dispatchers.IO) {
+                    val connection = URL(url).openConnection() as HttpURLConnection
+                    connection.requestMethod = "GET"
+                    val responseCode = connection.responseCode
+                    connection.disconnect()
+                    responseCode in 200..405 // Anything that's not a generic network failure
+                }
+                
+                if (success) {
+                   N8nApiClient.webhookUrl = url
+                   N8nApiClient.authMode = 2
                    _loginState.value = LoginState.Success
                 } else {
-                   _loginState.value = LoginState.Error("Invalid Webhook URL format. Must start with http.")
+                   _loginState.value = LoginState.Error("Invalid Webhook URL. Server error.")
                 }
             } catch (e: Exception) {
-                _loginState.value = LoginState.Error("Error: ${e.message}")
+                _loginState.value = LoginState.Error("Network error: ${e.message}")
             }
         }
     }
