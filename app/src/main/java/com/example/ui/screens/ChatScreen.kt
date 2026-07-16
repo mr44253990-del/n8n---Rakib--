@@ -1,5 +1,7 @@
 package com.example.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,12 +23,20 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import android.net.Uri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(viewModel: ChatViewModel = viewModel()) {
     var messageText by remember { mutableStateOf("") }
     val messages by viewModel.messages.collectAsState()
+
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { viewModel.sendMessage("Sent an Image: $it") }
+    }
+    val audioPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { viewModel.sendMessage("Sent an Audio file: $it") }
+    }
 
     // Glassmorphism background gradient
     val glassBackground = Brush.linearGradient(
@@ -74,10 +84,10 @@ fun ChatScreen(viewModel: ChatViewModel = viewModel()) {
                         .padding(horizontal = 8.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = { /* TODO attach image */ }) {
+                    IconButton(onClick = { imagePicker.launch("image/*") }) {
                         Icon(Icons.Default.Image, contentDescription = "Attach Image", tint = MaterialTheme.colorScheme.primary)
                     }
-                    IconButton(onClick = { /* TODO attach audio */ }) {
+                    IconButton(onClick = { audioPicker.launch("audio/*") }) {
                         Icon(Icons.Default.Mic, contentDescription = "Attach Audio", tint = MaterialTheme.colorScheme.primary)
                     }
                     OutlinedTextField(

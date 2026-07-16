@@ -55,8 +55,16 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                                 val responseText = connection.inputStream.bufferedReader().use { it.readText() }
                                 if (responseText.isNotEmpty()) {
                                     try {
-                                        val json = JSONObject(responseText)
-                                        reply = json.optString("output", json.optString("text", json.optString("message", json.optString("data", responseText))))
+                                        if (responseText.trim().startsWith("[")) {
+                                            val jsonArray = org.json.JSONArray(responseText)
+                                            if (jsonArray.length() > 0) {
+                                                val jsonObj = jsonArray.getJSONObject(0)
+                                                reply = jsonObj.optString("output", jsonObj.optString("text", jsonObj.optString("message", jsonObj.optString("data", responseText))))
+                                            }
+                                        } else {
+                                            val json = JSONObject(responseText)
+                                            reply = json.optString("output", json.optString("text", json.optString("message", json.optString("data", responseText))))
+                                        }
                                     } catch (je: Exception) {
                                         reply = responseText
                                     }

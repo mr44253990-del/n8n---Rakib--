@@ -7,22 +7,50 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.data.N8nApiClient
 
+import android.provider.Settings as AndroidSettings
+import androidx.compose.ui.platform.LocalContext
+
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(onNavigateToFeature: (String) -> Unit = {}, onLogout: () -> Unit = {}) {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
+    val context = LocalContext.current
+    val deviceId = remember { AndroidSettings.Secure.getString(context.contentResolver, AndroidSettings.Secure.ANDROID_ID) ?: "default_device" }
+    
+    val glassBackground = Brush.linearGradient(
+        colors = listOf(
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.3f)
+        )
+    )
+
+    Column(modifier = Modifier.fillMaxSize().background(glassBackground).padding(16.dp).verticalScroll(rememberScrollState())) {
         Text(
             text = "Settings & Features",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(16.dp))
+        
+        Card(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Background Push Notifications", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("To send a push notification from n8n to this device, send an HTTP POST request to:", style = MaterialTheme.typography.bodySmall)
+                Text("https://ntfy.sh/n8n_aistudio_$deviceId", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(vertical = 8.dp))
+                Text("Body: { \"message\": \"Your text here\" }", style = MaterialTheme.typography.bodySmall)
+            }
+        }
 
         SettingItem(icon = Icons.Default.Person, title = "Account", onClick = { onNavigateToFeature("Account") })
         SettingItem(icon = Icons.Default.Palette, title = "Theme & Appearance", onClick = { onNavigateToFeature("Theme & Appearance") })

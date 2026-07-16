@@ -31,6 +31,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    try {
+        val intent = android.content.Intent(this, com.example.util.NtfyService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+
     enableEdgeToEdge()
     setContent {
       MyApplicationTheme {

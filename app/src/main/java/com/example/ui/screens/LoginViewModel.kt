@@ -37,6 +37,7 @@ class LoginViewModel : ViewModel() {
 
                     val jsonInputString = JSONObject().apply {
                         put("email", email)
+                        put("emailOrLdapLoginId", email)
                         put("password", pass)
                     }.toString()
 

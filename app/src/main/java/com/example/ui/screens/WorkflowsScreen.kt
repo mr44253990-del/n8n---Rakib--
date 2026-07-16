@@ -17,6 +17,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.json.JSONObject
 
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
+
 @Composable
 fun WorkflowsScreen(viewModel: N8nViewModel = viewModel()) {
     val workflows by viewModel.workflows.collectAsState()
@@ -26,7 +30,14 @@ fun WorkflowsScreen(viewModel: N8nViewModel = viewModel()) {
         viewModel.refreshData()
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    val glassBackground = Brush.linearGradient(
+        colors = listOf(
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.3f)
+        )
+    )
+
+    Column(modifier = Modifier.fillMaxSize().background(glassBackground).padding(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,

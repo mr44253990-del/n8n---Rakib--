@@ -18,6 +18,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
+
 @Composable
 fun DashboardScreen(viewModel: N8nViewModel = viewModel()) {
     val workflows by viewModel.workflows.collectAsState()
@@ -27,6 +31,13 @@ fun DashboardScreen(viewModel: N8nViewModel = viewModel()) {
     LaunchedEffect(Unit) {
         viewModel.refreshData()
     }
+
+    val glassBackground = Brush.linearGradient(
+        colors = listOf(
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.3f)
+        )
+    )
 
     val activeCount = workflows.count { it.optBoolean("active", false) }
     val totalCount = workflows.size
@@ -46,7 +57,7 @@ fun DashboardScreen(viewModel: N8nViewModel = viewModel()) {
         StatItem("Errors", "$errorExecs", Icons.Default.Error)
     )
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(modifier = Modifier.fillMaxSize().background(glassBackground).padding(16.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
