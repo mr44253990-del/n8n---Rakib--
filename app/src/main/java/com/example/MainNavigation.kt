@@ -41,8 +41,14 @@ fun MainNavigation() {
     Scaffold(
         bottomBar = {
             if (showBottomBar) {
+                val currentItems = if (com.example.data.N8nApiClient.authMode == 1) {
+                    listOf(Screen.Dashboard, Screen.Workflows, Screen.Chat, Screen.Settings)
+                } else {
+                    listOf(Screen.Chat, Screen.Settings)
+                }
+
                 NavigationBar {
-                    bottomNavItems.forEach { screen ->
+                    currentItems.forEach { screen ->
                         NavigationBarItem(
                             icon = { Icon(screen.icon, contentDescription = screen.title) },
                             label = { Text(screen.title) },
@@ -69,7 +75,8 @@ fun MainNavigation() {
         ) {
             composable<LoginRoute> {
                 LoginScreen(onLoginSuccess = {
-                    navController.navigate(DashboardRoute) {
+                    val dest = if (com.example.data.N8nApiClient.authMode == 1) DashboardRoute else ChatRoute
+                    navController.navigate(dest) {
                         popUpTo(LoginRoute) { inclusive = true }
                     }
                 })
@@ -78,9 +85,20 @@ fun MainNavigation() {
             composable<WorkflowsRoute> { WorkflowsScreen() }
             composable<ChatRoute> { ChatScreen() }
             composable<SettingsRoute> { 
-                SettingsScreen(onNavigateToFeature = { title ->
-                    navController.navigate(FeatureRoute(title))
-                })
+                SettingsScreen(
+                    onNavigateToFeature = { title ->
+                        navController.navigate(FeatureRoute(title))
+                    },
+                    onLogout = {
+                        com.example.data.N8nApiClient.authMode = -1
+                        com.example.data.N8nApiClient.baseUrl = ""
+                        com.example.data.N8nApiClient.apiKey = ""
+                        com.example.data.N8nApiClient.webhookUrl = ""
+                        navController.navigate(LoginRoute) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                )
             }
             composable<FeatureRoute> { backStackEntry ->
                 val route = backStackEntry.toRoute<FeatureRoute>()

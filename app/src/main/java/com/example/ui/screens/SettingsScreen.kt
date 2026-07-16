@@ -11,10 +11,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.data.N8nApiClient
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onNavigateToFeature: (String) -> Unit = {}) {
+fun SettingsScreen(onNavigateToFeature: (String) -> Unit = {}, onLogout: () -> Unit = {}) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
         Text(
             text = "Settings & Features",
@@ -27,20 +28,23 @@ fun SettingsScreen(onNavigateToFeature: (String) -> Unit = {}) {
         SettingItem(icon = Icons.Default.Palette, title = "Theme & Appearance", onClick = { onNavigateToFeature("Theme & Appearance") })
         SettingItem(icon = Icons.Default.Notifications, title = "Push Notifications", onClick = { onNavigateToFeature("Push Notifications") })
         SettingItem(icon = Icons.Default.Sync, title = "Background Processing", onClick = { onNavigateToFeature("Background Processing") })
-        SettingItem(icon = Icons.Default.Security, title = "Credentials Manager", onClick = { onNavigateToFeature("Credentials Manager") })
-        SettingItem(icon = Icons.Default.Storage, title = "Storage & Cache", onClick = { onNavigateToFeature("Storage & Cache") })
-        SettingItem(icon = Icons.Default.Monitor, title = "Activity Monitor", onClick = { onNavigateToFeature("Activity Monitor") })
-        SettingItem(icon = Icons.Default.ListAlt, title = "Execution Details", onClick = { onNavigateToFeature("Execution Details") })
-        SettingItem(icon = Icons.Default.Edit, title = "Workflow Editor", onClick = { onNavigateToFeature("Workflow Editor") })
-        SettingItem(icon = Icons.Default.Folder, title = "Files", onClick = { onNavigateToFeature("Files") })
-        SettingItem(icon = Icons.Default.Notes, title = "Logs", onClick = { onNavigateToFeature("Logs") })
-        SettingItem(icon = Icons.Default.Star, title = "Smart Features", onClick = { onNavigateToFeature("Smart Features") })
-        SettingItem(icon = Icons.Default.AdminPanelSettings, title = "Admin Panel (Enterprise)", onClick = { onNavigateToFeature("Admin Panel") })
+        
+        if (N8nApiClient.authMode == 1) {
+            SettingItem(icon = Icons.Default.Security, title = "Credentials Manager", onClick = { onNavigateToFeature("Credentials Manager") })
+            SettingItem(icon = Icons.Default.Storage, title = "Storage & Cache", onClick = { onNavigateToFeature("Storage & Cache") })
+            SettingItem(icon = Icons.Default.Monitor, title = "Activity Monitor", onClick = { onNavigateToFeature("Activity Monitor") })
+            SettingItem(icon = Icons.Default.ListAlt, title = "Execution Details", onClick = { onNavigateToFeature("Execution Details") })
+            SettingItem(icon = Icons.Default.Edit, title = "Workflow Editor", onClick = { onNavigateToFeature("Workflow Editor") })
+            SettingItem(icon = Icons.Default.Folder, title = "Files", onClick = { onNavigateToFeature("Files") })
+            SettingItem(icon = Icons.Default.Notes, title = "Logs", onClick = { onNavigateToFeature("Logs") })
+            SettingItem(icon = Icons.Default.Star, title = "Smart Features", onClick = { onNavigateToFeature("Smart Features") })
+            SettingItem(icon = Icons.Default.AdminPanelSettings, title = "Admin Panel (Enterprise)", onClick = { onNavigateToFeature("Admin Panel") })
+        }
         
         Spacer(modifier = Modifier.height(24.dp))
         
         Button(
-            onClick = { /* TODO Logout */ },
+            onClick = onLogout,
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
         ) {
@@ -48,7 +52,7 @@ fun SettingsScreen(onNavigateToFeature: (String) -> Unit = {}) {
         }
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Version 1.0.0 | API: https://your-domain.com/api/v1",
+            text = "Connected to: ${if (N8nApiClient.authMode == 2) N8nApiClient.webhookUrl else N8nApiClient.baseUrl}",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.align(Alignment.CenterHorizontally)

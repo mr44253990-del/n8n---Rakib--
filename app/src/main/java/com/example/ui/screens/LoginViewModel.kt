@@ -45,15 +45,21 @@ class LoginViewModel : ViewModel() {
                         writer.flush()
                     }
 
+                    var errorText = ""
                     val responseCode = connection.responseCode
                     if (responseCode in 200..299) {
                         setCookie = connection.getHeaderField("Set-Cookie")
+                    } else {
+                        val errorStream = connection.errorStream
+                        if (errorStream != null) {
+                            errorText = errorStream.bufferedReader().use { it.readText() }
+                        }
                     }
                     connection.disconnect()
-                    responseCode in 200..299
+                    Pair(responseCode in 200..299, errorText)
                 }
 
-                if (success) {
+                if (success.first) {
                     N8nApiClient.baseUrl = baseUrl
                     N8nApiClient.authMode = 0
                     if (setCookie != null) {
@@ -61,7 +67,7 @@ class LoginViewModel : ViewModel() {
                     }
                     _loginState.value = LoginState.Success
                 } else {
-                    _loginState.value = LoginState.Error("Invalid email or password.")
+                    _loginState.value = LoginState.Error("Invalid email or password. Server: ${success.second}")
                 }
             } catch (e: Exception) {
                 _loginState.value = LoginState.Error("Network error: ${e.message}")
