@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(onNavigateToFeature: (String) -> Unit = {}) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
         Text(
             text = "Settings & Features",
@@ -23,19 +23,19 @@ fun SettingsScreen() {
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        SettingItem(icon = Icons.Default.Person, title = "Account")
-        SettingItem(icon = Icons.Default.Palette, title = "Theme & Appearance")
-        SettingItem(icon = Icons.Default.Notifications, title = "Push Notifications")
-        SettingItem(icon = Icons.Default.Sync, title = "Background Processing")
-        SettingItem(icon = Icons.Default.Security, title = "Credentials Manager")
-        SettingItem(icon = Icons.Default.Storage, title = "Storage & Cache")
-        SettingItem(icon = Icons.Default.Monitor, title = "Activity Monitor")
-        SettingItem(icon = Icons.Default.ListAlt, title = "Execution Details")
-        SettingItem(icon = Icons.Default.Edit, title = "Workflow Editor")
-        SettingItem(icon = Icons.Default.Folder, title = "Files")
-        SettingItem(icon = Icons.Default.Notes, title = "Logs")
-        SettingItem(icon = Icons.Default.Star, title = "Smart Features")
-        SettingItem(icon = Icons.Default.AdminPanelSettings, title = "Admin Panel (Enterprise)")
+        SettingItem(icon = Icons.Default.Person, title = "Account", onClick = { onNavigateToFeature("Account") })
+        SettingItem(icon = Icons.Default.Palette, title = "Theme & Appearance", onClick = { onNavigateToFeature("Theme & Appearance") })
+        SettingItem(icon = Icons.Default.Notifications, title = "Push Notifications", onClick = { onNavigateToFeature("Push Notifications") })
+        SettingItem(icon = Icons.Default.Sync, title = "Background Processing", onClick = { onNavigateToFeature("Background Processing") })
+        SettingItem(icon = Icons.Default.Security, title = "Credentials Manager", onClick = { onNavigateToFeature("Credentials Manager") })
+        SettingItem(icon = Icons.Default.Storage, title = "Storage & Cache", onClick = { onNavigateToFeature("Storage & Cache") })
+        SettingItem(icon = Icons.Default.Monitor, title = "Activity Monitor", onClick = { onNavigateToFeature("Activity Monitor") })
+        SettingItem(icon = Icons.Default.ListAlt, title = "Execution Details", onClick = { onNavigateToFeature("Execution Details") })
+        SettingItem(icon = Icons.Default.Edit, title = "Workflow Editor", onClick = { onNavigateToFeature("Workflow Editor") })
+        SettingItem(icon = Icons.Default.Folder, title = "Files", onClick = { onNavigateToFeature("Files") })
+        SettingItem(icon = Icons.Default.Notes, title = "Logs", onClick = { onNavigateToFeature("Logs") })
+        SettingItem(icon = Icons.Default.Star, title = "Smart Features", onClick = { onNavigateToFeature("Smart Features") })
+        SettingItem(icon = Icons.Default.AdminPanelSettings, title = "Admin Panel (Enterprise)", onClick = { onNavigateToFeature("Admin Panel") })
         
         Spacer(modifier = Modifier.height(24.dp))
         
@@ -57,15 +57,20 @@ fun SettingsScreen() {
 }
 
 @Composable
-fun SettingItem(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
+fun SettingItem(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, onClick: () -> Unit = {}) {
+    Surface(
+        onClick = onClick,
+        color = androidx.compose.ui.graphics.Color.Transparent
     ) {
-        Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(text = title, style = MaterialTheme.typography.titleMedium)
-        Spacer(modifier = Modifier.weight(1f))
-        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(text = title, style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.weight(1f))
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }

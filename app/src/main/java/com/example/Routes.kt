@@ -7,3 +7,6 @@ import kotlinx.serialization.Serializable
 @Serializable object WorkflowsRoute
 @Serializable object ChatRoute
 @Serializable object SettingsRoute
+
+// Features
+@Serializable data class FeatureRoute(val title: String)

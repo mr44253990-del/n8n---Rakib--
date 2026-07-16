@@ -40,15 +40,19 @@ class LoginViewModel : ViewModel() {
         viewModelScope.launch {
             _loginState.value = LoginState.Loading
             try {
+                if (!url.startsWith("http")) {
+                    _loginState.value = LoginState.Error("URL must start with http or https")
+                    return@launch
+                }
                 val baseUrl = url.trimEnd('/')
                 val response: HttpResponse = client.post("$baseUrl/rest/login") {
                     contentType(ContentType.Application.Json)
                     setBody(LoginRequest(email, pass))
                 }
-                if (response.status.isSuccess()) {
+                if (response.status.value == 200 && response.contentType()?.match(ContentType.Application.Json) == true) {
                     _loginState.value = LoginState.Success
                 } else {
-                    _loginState.value = LoginState.Error("Invalid email or password.")
+                    _loginState.value = LoginState.Error("Invalid email or password. Server returned ${response.status.value}")
                 }
             } catch (e: Exception) {
                 _loginState.value = LoginState.Error("Network error: ${e.message}")
@@ -60,12 +64,16 @@ class LoginViewModel : ViewModel() {
         viewModelScope.launch {
             _loginState.value = LoginState.Loading
             try {
+                if (!url.startsWith("http")) {
+                    _loginState.value = LoginState.Error("URL must start with http or https")
+                    return@launch
+                }
                 val baseUrl = url.trimEnd('/')
                 val response: HttpResponse = client.get("$baseUrl/api/v1/workflows") {
                     header("X-N8N-API-KEY", apiKey)
                 }
                 
-                if (response.status.isSuccess()) {
+                if (response.status.value == 200 && response.contentType()?.match(ContentType.Application.Json) == true) {
                     _loginState.value = LoginState.Success
                 } else {
                     _loginState.value = LoginState.Error("Invalid API Key or URL. Code: ${response.status.value}")

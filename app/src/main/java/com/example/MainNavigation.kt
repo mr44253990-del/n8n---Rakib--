@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
+import androidx.navigation.toRoute
 import com.example.ui.screens.*
 
 sealed class Screen(val route: Any, val title: String, val icon: ImageVector) {
@@ -76,7 +77,15 @@ fun MainNavigation() {
             composable<DashboardRoute> { DashboardScreen() }
             composable<WorkflowsRoute> { WorkflowsScreen() }
             composable<ChatRoute> { ChatScreen() }
-            composable<SettingsRoute> { SettingsScreen() }
+            composable<SettingsRoute> { 
+                SettingsScreen(onNavigateToFeature = { title ->
+                    navController.navigate(FeatureRoute(title))
+                })
+            }
+            composable<FeatureRoute> { backStackEntry ->
+                val route = backStackEntry.toRoute<FeatureRoute>()
+                PlaceholderScreen(title = route.title)
+            }
         }
     }
 }
