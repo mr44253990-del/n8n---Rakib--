@@ -28,6 +28,10 @@ object PrefManager {
     var webhookUrl: String
         get() = prefs?.getString("webhookUrl", "") ?: ""
         set(value) = prefs?.edit()?.putString("webhookUrl", value)?.apply() ?: Unit
+
+    var fcmToken: String
+        get() = prefs?.getString("fcmToken", "") ?: ""
+        set(value) = prefs?.edit()?.putString("fcmToken", value)?.apply() ?: Unit
         
     fun clear() {
         prefs?.edit()?.clear()?.apply()

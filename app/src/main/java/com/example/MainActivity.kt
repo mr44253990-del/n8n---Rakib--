@@ -31,16 +31,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    try {
-        val intent = android.content.Intent(this, com.example.util.NtfyService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
+    com.google.firebase.messaging.FirebaseMessaging.getInstance().token
+        .addOnCompleteListener { task ->
+            if (!task.isSuccessful) return@addOnCompleteListener
+            val token = task.result
+            android.util.Log.d("FCM", token)
+            com.example.data.PrefManager.fcmToken = token
         }
-    } catch (e: Exception) {
-        e.printStackTrace()
-    }
 
     enableEdgeToEdge()
     setContent {

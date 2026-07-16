@@ -51,9 +51,10 @@ fun SettingsScreen(onNavigateToFeature: (String) -> Unit = {}, onLogout: () -> U
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Background Push Notifications", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("To send a push notification from n8n to this device, send an HTTP POST request to:", style = MaterialTheme.typography.bodySmall)
-                Text("https://ntfy.sh/n8n_aistudio_$deviceId", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(vertical = 8.dp))
-                Text("Body: { \"message\": \"Your text here\" }", style = MaterialTheme.typography.bodySmall)
+                Text("To send a push notification from n8n to this device, use this FCM Token:", style = MaterialTheme.typography.bodySmall)
+                val token = com.example.data.PrefManager.fcmToken
+                Text(token.ifEmpty { "Generating token..." }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(vertical = 8.dp))
+                Text("Send FCM with data payload: { \"message\": \"Your reply\" }", style = MaterialTheme.typography.bodySmall)
             }
         }
         
